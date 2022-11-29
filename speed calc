@@ -1,0 +1,195 @@
+gen install volt 
+
+volt new typing-calculator
+
+cd typing-calculator
+
+config/app.rb
+
+bundle exec volt server
+
+app/main/views/main/main.html
+
+.
+.
+.
+<:Body>
+  <div class="container">
+    <div class="header">
+      <ul class="nav nav-pills pull-right">
+        <:nav href="/" text="Home" />
+        <:nav href="/about" text="About" />
+    <!--    <:user-templates:menu /> COMMENT ME OUT -->
+      </ul>
+      <h3 class="text-muted">typing-calculator</h3>
+    </div>
+.
+.
+.
+
+app/main/config/routes.rb
+
+get '/about', _action: 'about'
+
+get '/', {}
+
+app/main/views/main/index.html
+
+<:Title>
+  Typing Calculator
+
+<:Body>
+  <h1>Words Per Minute Typing Calculator</h1>
+
+  <form e-submit="complete" role="form">
+    <div class="form-group">
+     <label><h3>Begin Typing</h3></label>
+     <input class="form-control submit-field" type="text"
+            value=" {% raw html %}{{page._user_string}}{% endraw %}">
+    </div>
+  </form>
+
+app/main/controllers/main_controller.rb
+
+class MainController < Volt::ModelController
+  def index
+    # Add code for when the index view is loaded
+  end
+
+  def about
+    # Add code for when the about view is loaded
+  end
+
+  def sample_text
+   "In Volt, to simplify managing application state, all application state is kept in models that can optionally be persisted in different locations. By centralizing the application state, we reduce the amount of complex code needed to update a page. We can then build our page's html declaratively."
+  end
+end
+
+app/main/views/main/index.html
+
+<:Title>
+  Typing Calculator
+
+<:Body>
+ <h1>Words Per Minute Typing Calculator</h1>
+
+ <h3>Sample Text</h3>
+ <p>{%raw ruby%}{{sample_text}}{%endraw%}</p>
+.
+.
+.
+
+class MainController < Volt::ModelController
+  .
+  .
+  .
+  def sample_array
+    sample_text.split
+  end
+
+  def user_array
+    page._user_string.split
+  end
+  .
+  .
+  .
+  
+  app/main/views/index.html
+
+<b>sample text array</b>
+<p>{{sample_array}}</p>
+
+<b>user text array</b>
+<p>{{user_array}}</p>
+
+app/main/controllers/main_controller.rb
+
+.
+.
+.
+def mistakes_array
+  popped_array = user_array
+  popped_array.pop
+  mistakes = popped_array - sample_array
+end
+.
+.
+.
+
+app/main/views/index.html
+
+<b>mistakes array</b>
+<p>{{mistakes_array}}</p>
+
+app/main/controllers/main_controller.rb
+
+def character_length(array)
+  array.join.length
+end
+
+def accuracy
+  correct_characters = character_length(user_array) - character_length(mistakes_array)
+  fraction = correct_characters/ character_length(user_array)
+  accuracy_percentage = (fraction * 100).round
+end
+
+app/main/controllers/main_controller.rb
+
+def word_num
+ character_length(user_array) / 5
+end
+
+app/main/views/index.html
+
+<p>{{word_num}}</p>
+<b>number of words</b>
+
+<p>{{accuracy}}</p>
+<b>accuracy</b>
+
+app/main/controllers/main_controller.rb
+
+def time_elapsed
+  if page._user_string.length == 1
+    @start_time = Time.new
+  elsif page._user_string.length == 0
+    @start_time = 0
+  end
+
+  minutes = (Time.now - @start_time).round / 60
+end
+
+app/main/controllers/main_controller.rb
+
+def gross_wpm
+  (word_num / time_elapsed).round
+end
+
+def net_wpm
+  errors_per_min = (mistakes_array.count / time_elapsed).round
+  gross_wpm - errors_per_min
+end
+
+app/main/views/index.html
+
+<div class="progress">
+  <div class="progress-bar progress-bar-{{ if net_wpm > 60 }}success
+                          {{elsif net_wpm > 31 }}warning
+                          {{else}}danger{{end}}
+              progress-bar-striped" role="progressbar"
+              aria-valuenow="{{net_wpm}}"
+              aria-valuemin="0"
+              aria-valuemax="100"
+              style="width: {{net_wpm}}%">
+
+     <span class="sr-only">{{net_wpm}}%</span>
+  </div>
+</div>
+.
+.
+.
+<p>{{net_wpm}}<p>
+<b>net wpm</b>
+
+<p>{{gross_wpm}}<p>
+<b>gross wpm</b>
